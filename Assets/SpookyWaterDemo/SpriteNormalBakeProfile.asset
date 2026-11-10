@@ -1,0 +1,48 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01feaa8c7ad5ac944a29ba4c7d1e9195, type: 3}
+  m_Name: SpriteNormalBakeProfile
+  m_EditorClassIdentifier: SpookyWater.Editor::SpookyWater.Editor.SpriteNormalBakeProfile
+  _textures:
+  - {fileID: 2800000, guid: d6a736f8842c8cf4b9756bd6c35bad41, type: 3}
+  - {fileID: 2800000, guid: 248c7a9273fdeab49a16f27c3c25168c, type: 3}
+  - {fileID: 2800000, guid: b3584030356bd7d43ba004e708e446de, type: 3}
+  - {fileID: 2800000, guid: 44a7cf50c87711b4e84fc46c01b37f08, type: 3}
+  - {fileID: 2800000, guid: 4116a145d38de9d4797f378405279062, type: 3}
+  - {fileID: 2800000, guid: d4eaa7361b94a62478d3bfddacee7551, type: 3}
+  - {fileID: 2800000, guid: 7a9a0eedd849df04984c8b273ed2ace9, type: 3}
+  - {fileID: 2800000, guid: 5b56587a3237b5440b6f7a1d94cb1c0c, type: 3}
+  - {fileID: 2800000, guid: 0e9dba6c9d395f84c8f679be37fcb38e, type: 3}
+  - {fileID: 2800000, guid: 1bbea382e8d0e0348a30453305f42619, type: 3}
+  - {fileID: 2800000, guid: 776f62d1f82be3e4e8a4eefa8743366c, type: 3}
+  - {fileID: 2800000, guid: b784a746cbbc19745a95ca454e016c81, type: 3}
+  - {fileID: 2800000, guid: 9f7c3103ddf078e47a9a4fb245a1947e, type: 3}
+  - {fileID: -983339723077824172, guid: de2245b7a709b3e46a0d3a2d77c449eb, type: 3}
+  _suffix: _n
+  _assignToSprite: 1
+  _alphaThreshold: 0.5
+  _bevelShape: 0
+  _bevelWidth: 12
+  _bevelHeight: 1
+  _shapeSmoothing: 2
+  _bevelTextureBorders: 1
+  _innerEdges: 0.4
+  _innerEdgeThreshold: 0.2
+  _innerEdgeWidth: 4
+  _detailBumps: 2
+  _detailWidth: 4
+  _detailSoftness: 0.5
+  _invertDetail: 0
+  _normalStrength: 1
+  _flipX: 0
+  _flipY: 0
+  _padding: 4

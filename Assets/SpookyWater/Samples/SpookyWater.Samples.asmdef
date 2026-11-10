@@ -1,0 +1,23 @@
+{
+    "name": "SpookyWater.Samples",
+    "rootNamespace": "SpookyWater.Samples",
+    "references": [
+        "SpookyWater.Runtime",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "",
+            "define": "SPOOKYWATER_INPUTSYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}

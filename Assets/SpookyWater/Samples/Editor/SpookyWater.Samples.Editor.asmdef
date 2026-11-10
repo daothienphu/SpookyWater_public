@@ -1,0 +1,23 @@
+{
+    "name": "SpookyWater.Samples.Editor",
+    "rootNamespace": "SpookyWater.Samples.Editor",
+    "references": [
+        "SpookyWater.Samples",
+        "SpookyWater.Runtime",
+        "SpookyWater.Editor",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.2D.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

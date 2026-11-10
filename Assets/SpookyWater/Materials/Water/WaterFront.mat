@@ -1,0 +1,99 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: WaterFront
+  m_Shader: {fileID: 4800000, guid: 4caca789546e02c4f9ac15be0f1528dd, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Clarity: 0.65
+    - _ClarityDepthLoss: 0.6
+    - _DebugDistortionMask: 0
+    - _DebugHeightVis: 0
+    - _DebugRippleVis: 0
+    - _DebugRippleVisScale: 40
+    - _DepthGradientPower: 1.2
+    - _DistortionRipple: 0.05
+    - _DistortionRippleDepth: 1.5
+    - _DistortionScale: 6
+    - _DistortionSpeed: 0.3
+    - _DistortionStrength: 0
+    - _DistortionSurfaceCalm: 1.2
+    - _EdgeFalloffWidth: 0.043
+    - _GlowDeepAmount: 0.1
+    - _GlowDepth: 2
+    - _GlowFollowColor: 0.5
+    - _GlowIntensity: 0
+    - _GlowSelfLit: 0.5
+    - _MistAmount: 0
+    - _MistBreakup: 0.35
+    - _MistDepthThickening: 0.4
+    - _MistLightDepth: 3
+    - _MistScale: 0.3
+    - _MistSpeed: 0.15
+    - _PocketStencilComp: 6
+    - _RippleHeightOffset: 0
+    - _RippleScale: 1
+    - _SurfaceGlowDepth: 1
+    - _VerticalFalloffPower: 1.6
+    - _WaterDepthRange: 5
+    - _WaterlineBrightnessVariation: 0.5
+    - _WaterlineCrestBrightness: 0.8
+    - _WaterlineFoamWidth: 0.03
+    - _WaterlineGlow: 0.06
+    - _WaterlineGlowStrength: 0.4
+    - _WaterlinePosition: 1
+    - _WaterlineRippleResponse: 1
+    - _WaterlineThicknessVariation: 0.65
+    - _WaterlineVariationScale: 0.7
+    - _WaterlineVariationSpeed: 0.3
+    - _WaveHeightOffset: 0
+    - _WaveScale: 1
+    m_Colors:
+    - _DeepColor: {r: 0.01, g: 0.08, b: 0.11, a: 1}
+    - _DistortionDir: {r: 0.05, g: 0.02, b: 0, a: 0}
+    - _FoamColor: {r: 0.45, g: 1, b: 1, a: 1}
+    - _GlowColor: {r: 0.3, g: 0.6, b: 1, a: 1}
+    - _MistColor: {r: 0.22, g: 0.55, b: 0.85, a: 1}
+    - _MistDeepColor: {r: 0.03, g: 0.079999976, b: 0.15999997, a: 1}
+    - _ShallowColor: {r: 0.03, g: 0.3, b: 0.32, a: 1}
+    - _SurfaceGlowColor: {r: 0.04, g: 0.3, b: 0.3, a: 1}
+    - _TransmissionTint: {r: 0.4, g: 0.85, b: 0.8, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
+--- !u!114 &1486271896139754615
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  version: 10
