@@ -1,5 +1,5 @@
 # SpookyWater
-
+![Page Views](https://api.visitorbadge.io/api/visitors?path=daothienphu%2FSpookyWater_public&label=Page%20Views&countColor=%23007BA7)  
 Interactive water for 2D and 2.5D games in Unity (URP 2D Renderer). Paintable with Tilemaps. This package includes:
 
 - a reflective water **surface**, displaced by a real GPU ripple simulation that can bounce off shores and obstacles,
