@@ -17,11 +17,12 @@ Namespace: `SpookyWater`. Package folder: `Assets/SpookyWater/` (or `Packages/co
 
 ## Previews
 
-| Floating objects and platforms | Dashing and lighting |
-|---|---|
-| [![Floating objects and platforms](https://i.gyazo.com/dd0b6d4e475886175bee571837a24358.gif)](https://gyazo.com/dd0b6d4e475886175bee571837a24358) | [![Dashing and lighting](https://i.gyazo.com/6398bb9b131e561de1563919877d55b0.gif)](https://gyazo.com/6398bb9b131e561de1563919877d55b0) |
-| **Leaping and splashes** | **Water pocket** |
-| [![Leaping and splashes](https://i.gyazo.com/e6e7e4ca95e5f6a0dfaa65c87629b31a.gif)](https://gyazo.com/e6e7e4ca95e5f6a0dfaa65c87629b31a) | [![Water pocket](https://i.gyazo.com/a35ef5298606d65eb8347d27d3c4bf15.gif)](https://gyazo.com/a35ef5298606d65eb8347d27d3c4bf15) |
+Preview GIFs (open on Gyazo):
+
+- [Floating objects and platforms](https://gyazo.com/dd0b6d4e475886175bee571837a24358)
+- [Dashing and lighting](https://gyazo.com/6398bb9b131e561de1563919877d55b0)
+- [Leaping and splashes](https://gyazo.com/e6e7e4ca95e5f6a0dfaa65c87629b31a)
+- [Water pocket](https://gyazo.com/a35ef5298606d65eb8347d27d3c4bf15)
 
 ## Contents
 
