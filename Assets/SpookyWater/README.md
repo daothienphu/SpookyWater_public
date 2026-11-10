@@ -19,10 +19,10 @@ Namespace: `SpookyWater`. Package folder: `Assets/SpookyWater/` (or `Packages/co
 
 Preview GIFs (open on Gyazo):
 
-- [Floating objects and platforms](https://gyazo.com/dd0b6d4e475886175bee571837a24358)
-- [Dashing and lighting](https://gyazo.com/6398bb9b131e561de1563919877d55b0)
-- [Leaping and splashes](https://gyazo.com/e6e7e4ca95e5f6a0dfaa65c87629b31a)
-- [Water pocket](https://gyazo.com/a35ef5298606d65eb8347d27d3c4bf15)
+- [Floating objects and platforms](https://gyazo.com/5bac210205e4eba2fd38c1098eb117b9)
+- [God rays and dashing wakes](https://gyazo.com/c61fd86206850cf5513842faa695f854)
+- [Leaping and slamming splashes](https://gyazo.com/6e8ed3580e7e8a33ec22da9f9a6480ea)
+- [Water pocket](https://gyazo.com/2bf843c99542dde51458169bedcce0b2)
 
 ## Contents
 
