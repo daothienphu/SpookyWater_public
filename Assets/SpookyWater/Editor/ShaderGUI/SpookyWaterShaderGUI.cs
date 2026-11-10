@@ -35,6 +35,7 @@ namespace SpookyWater.Editor
             }
 
             materialEditor.SetDefaultGUIWidths();
+            EditorGUI.BeginChangeCheck();
 
             if (ShaderPropertyDocs.TryGetIntro(shaderName, out var intro))
                 EditorGUILayout.HelpBox(intro, MessageType.None);
@@ -79,6 +80,17 @@ namespace SpookyWater.Editor
                 materialEditor.EnableInstancingField();
                 materialEditor.DoubleSidedGIField();
                 EditorGUILayout.EndVertical();
+            }
+
+            if (EditorGUI.EndChangeCheck() && shaderName == "SpookyWater/Water Surface")
+                RefreshBuildersUsing(material);
+        }
+
+        private static void RefreshBuildersUsing(Material material)
+        {
+            foreach (var builder in Object.FindObjectsByType<WaterTilemapBuilder>(FindObjectsSortMode.None))
+            {
+                if (builder.SurfaceMaterial == material) builder.RefreshFromMaterials();
             }
         }
 
@@ -148,16 +160,7 @@ namespace SpookyWater.Editor
                 var text = string.IsNullOrEmpty(tip) ? entry.name : tip + "\n(" + entry.name + ")";
                 if (entry.perRenderer) text += "\nUsually overridden per renderer at runtime.";
                 editor.ShaderProperty(property, new GUIContent(entry.displayName, text));
-                if (entry.name == "_DebugDistortionMask" && property.floatValue > 0.5f) DrawDistortionMaskStatus();
             }
-        }
-
-        private static void DrawDistortionMaskStatus()
-        {
-            if (!SpookyWaterSettings.Instance.distortedSortingLayers.IsEverything) return;
-            EditorGUILayout.HelpBox("The distortion mask is off: every sorting layer is ticked in Distorted Sorting Layers, so nothing is kept sharp and this view is plain dark blue. Untick a layer (e.g. Player) to see it.", MessageType.Info);
-            if (GUILayout.Button("Open Distorted Sorting Layers"))
-                SettingsService.OpenProjectSettings("Project/SpookyWater");
         }
 
         private static bool PassesShowIf(Object[] targets, ShaderEntry entry)

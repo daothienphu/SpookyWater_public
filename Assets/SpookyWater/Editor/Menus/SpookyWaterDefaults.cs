@@ -7,7 +7,7 @@ namespace SpookyWater.Editor
     {
         public const string WaterSurfaceMaterial = "9d6920e6abb01014b8334006b90ff58c";
         public const string WaterFrontMaterial = "ef07008fd91c59c4aa4bfed529eb2287";
-        public const string WaterHorizonMaterial = "b28f4d0c6e3a5c2f9b7d1e4a8c3f6b21";
+        public const string WaterHorizonShader = "a17e3c9b5d2f4b1e8a6f9c3d7b2e4f10";
         public const string RippleSimulationMaterial = "95d5f44b9d81f4447a803ed975fcc43d";
         public const string SurfaceDebrisMaterial = WaterEditorDefaults.SurfaceDebrisMaterial;
         public const string LightShaftMaterial = WaterEditorDefaults.LightShaftMaterial;
@@ -63,7 +63,7 @@ namespace SpookyWater.Editor
             if (AssignIfEmpty<Material>(builder, "_surfaceMeshMaterial", WaterSurfaceMaterial)) count++;
             if (AssignIfEmpty<Material>(builder, "_lineMeshMaterial", WaterFrontMaterial)) count++;
             if (AssignIfEmpty<Material>(builder, "_bodyMeshMaterial", WaterFrontMaterial)) count++;
-            if (AssignIfEmpty<Material>(builder, "_horizonMaterial", WaterHorizonMaterial)) count++;
+            if (AssignIfEmpty<Shader>(builder, "_horizonShader", WaterHorizonShader)) count++;
             if (AssignIfEmpty<Material>(builder, "_rippleSimulationMaterial", RippleSimulationMaterial)) count++;
             return count;
         }
@@ -71,7 +71,7 @@ namespace SpookyWater.Editor
         public static bool BuilderMaterialsMissing(SerializedObject builder)
         {
             return IsEmpty(builder, "_surfaceMeshMaterial") || IsEmpty(builder, "_lineMeshMaterial") ||
-                   IsEmpty(builder, "_bodyMeshMaterial") || IsEmpty(builder, "_horizonMaterial") ||
+                   IsEmpty(builder, "_bodyMeshMaterial") ||
                    IsEmpty(builder, "_rippleSimulationMaterial");
         }
 

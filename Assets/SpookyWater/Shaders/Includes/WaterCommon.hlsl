@@ -304,9 +304,9 @@ float WaterContactMask(float2 worldXZ, float2 cameraXZ, float reach, float sprea
     return mask;
 }
 
-float SampleWaterHeight(float2 worldXZ, float rippleScale, float rippleOffset)
+float SampleWaterHeight(float2 worldXZ, float rippleScale)
 {
-    return SampleRipple(worldXZ) * rippleScale + rippleOffset;
+    return SampleRipple(worldXZ) * rippleScale;
 }
 
 float WaterEdgeFalloff1D(float x, float edgeWidth)
@@ -323,7 +323,7 @@ float HorizonSeamVertexHeight(float worldX)
 {
     float2 worldXZ = float2(worldX, _WaterHorizonSeam.x);
     float2 fieldUV = WaterFieldUV(float3(worldXZ.x, 0.0, worldXZ.y));
-    float h = SampleWaterHeight(worldXZ, _WaterHorizonHeightScale.x, _WaterHorizonHeightScale.y);
+    float h = SampleWaterHeight(worldXZ, _WaterHorizonHeightScale.x);
     return h * WaterEdgeFalloff1D(fieldUV.x, _WaterHorizonEdgeFalloff);
 }
 
@@ -350,7 +350,7 @@ float WaterSurfaceHeightAt(float3 restWS)
 {
     float2 fieldUV = WaterFieldUV(restWS);
     float settle = pow(saturate(1.0 - fieldUV.y), max(_WaterSurfaceDisplacement.z, 1e-3));
-    float h = SampleWaterHeight(restWS.xz, _WaterSurfaceDisplacement.x, _WaterSurfaceDisplacement.y);
+    float h = SampleWaterHeight(restWS.xz, _WaterSurfaceDisplacement.x);
     h *= WaterEdgeFalloff1D(fieldUV.x, max(_WaterSurfaceDisplacement.w, 1e-3)) * settle;
     return BlendIntoHorizonSeam(h, restWS);
 }
@@ -382,15 +382,6 @@ half WaterWorldDepthT(float worldY, float surfaceY, half depthRange)
 {
     half t = saturate((surfaceY - worldY) / max(depthRange, 1e-4));
     return t + t * t - t * t * t;
-}
-
-half3 RippleDebugColor(float ripple, half visScale)
-{
-    half3 rest = half3(0.05, 0.05, 0.08);
-    half3 up = half3(1.0, 0.2, 0.15);
-    half3 down = half3(0.15, 0.5, 1.0);
-    half t = saturate(abs(ripple) * visScale);
-    return lerp(rest, ripple >= 0 ? up : down, t);
 }
 
 #endif

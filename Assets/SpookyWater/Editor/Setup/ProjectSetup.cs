@@ -113,7 +113,6 @@ namespace SpookyWater.Editor
             CollectMissing(so, missing, "_surfaceMeshMaterial", "Surface Mesh");
             CollectMissing(so, missing, "_lineMeshMaterial", "Line Mesh");
             CollectMissing(so, missing, "_bodyMeshMaterial", "Body Mesh");
-            CollectMissing(so, missing, "_horizonMaterial", "Horizon");
             CollectMissing(so, missing, "_rippleSimulationMaterial", "Ripple Simulation");
             return missing;
         }

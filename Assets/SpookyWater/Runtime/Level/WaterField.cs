@@ -55,7 +55,6 @@ namespace SpookyWater
         private static readonly int RippleWindowSpongeId = Shader.PropertyToID("_RippleWindowSponge");
         private static readonly int RippleWindowSpongeWidthId = Shader.PropertyToID("_RippleWindowSpongeWidth");
         private static readonly int RippleShiftUVId = Shader.PropertyToID("_RippleShiftUV");
-        private static readonly int DebugClickMarkerDataId = Shader.PropertyToID("_DebugClickMarkerData");
         private static readonly int WaterShoreDistanceTexId = Shader.PropertyToID("_WaterShoreDistanceTex");
         private static readonly int WaterShoreDistanceRectId = Shader.PropertyToID("_WaterShoreDistanceRect");
         private static readonly int WaterContactsId = Shader.PropertyToID("_WaterContacts");
@@ -218,9 +217,6 @@ namespace SpookyWater
             var signedHeight = (initialUp ? initialStrength : -initialStrength) * (_settings?.impactHeight ?? 1f);
             var radius = (_settings?.impactRadius ?? 0.2f) * radiusScale;
             QueueImpulse(worldPosition, worldPosition, radius, signedHeight);
-
-            PublishVector(DebugClickMarkerDataId,
-                new Vector4(worldPosition.x, worldPosition.z, Time.time, initialUp ? 1f : -1f));
 
             if (_verboseLogging)
             {

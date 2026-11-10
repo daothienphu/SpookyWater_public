@@ -8,7 +8,7 @@ namespace SpookyWater
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(10)]
     [RequireComponent(typeof(Rigidbody2D))]
-    public class WaterSwimmer : MonoBehaviour
+    public class WaterSwimmer : MonoBehaviour, IWaterCrossingBody
     {
         [Group("Water")]
         [Tooltip("Makes a character interact with the water: reports whether it is in the water and how deep, and leaves a wake along the surface, spray, a dash trail and bubbles as it swims. Crossing the waterline already ripples and splashes by itself for any Rigidbody2D. This is the height above the feet that floats level with the water surface.")]
@@ -74,6 +74,9 @@ namespace SpookyWater
         [Tooltip("Height above the feet, in world units, the bubbles come from. About the chest.")]
         [SerializeField, Min(0f)] private float _bubbleHeight = 0.7f;
 
+        [Group("Water Crossing")]
+        [SerializeField] private WaterCrossing _crossing = new();
+
         [Group("Events")]
         [Tooltip("Raised when the feet go from outside the water to inside it.")]
         public UnityEvent OnEnterWater = new();
@@ -112,6 +115,8 @@ namespace SpookyWater
         public bool FacingLeft { get; set; }
 
         public bool EffectsEnabled { get; set; } = true;
+
+        public WaterCrossing Crossing => _crossing;
 
         public bool InWater
         {

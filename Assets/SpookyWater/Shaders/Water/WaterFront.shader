@@ -2,9 +2,8 @@ Shader "SpookyWater/Water Front"
 {
     Properties
     {
-        [Section(Surface)] _RippleScale("Ripple Scale", Float) = 1
-        _RippleHeightOffset("Ripple Height Offset", Float) = 0
-        _EdgeFalloffWidth("Edge Falloff Width", Range(0.001, 0.25)) = 0.03
+        [HideInInspector] _RippleScale("Ripple Scale", Float) = 1
+        [Section(Surface)] _EdgeFalloffWidth("Edge Falloff Width", Range(0.001, 0.25)) = 0.03
         _VerticalFalloffPower("Vertical Falloff Power", Range(0.1, 6)) = 1.6
 
         [Section(Color)] _ShallowColor("Shallow Color", Color) = (0.55, 0.85, 0.85, 1)
@@ -34,7 +33,7 @@ Shader "SpookyWater/Water Front"
         [ShowIf(_MistAmount)] _MistScale("Mist Scale", Float) = 0.3
         [ShowIf(_MistAmount)] _MistSpeed("Mist Drift Speed", Float) = 0.15
 
-        [Section(Waterline)] _FoamColor("Foam Color", Color) = (0.85, 0.98, 1, 1)
+        [Section(Waterline)] _FoamColor("Line Color", Color) = (0.85, 0.98, 1, 1)
         _WaterlinePosition("Waterline Position", Range(0, 1)) = 0.985
         _WaterlineFoamWidth("Waterline Foam Width", Range(0.001, 0.15)) = 0.02
         _WaterlineGlow("Waterline Glow Reach", Range(0, 0.5)) = 0.08
@@ -53,13 +52,6 @@ Shader "SpookyWater/Water Front"
         _DistortionRipple("Ripple Refraction", Range(0, 0.3)) = 0.05
         _DistortionRippleDepth("Ripple Refraction Depth", Float) = 1.5
         _DistortionSurfaceCalm("Surface Calm Depth", Float) = 1.2
-
-        [Section(Detail)] _MainTex("Detail Texture", 2D) = "white" {}
-
-        [Section(Debug)] [Toggle] _DebugHeightVis("Show Displacement", Float) = 0
-        [Toggle] _DebugRippleVis("Show Ripple Simulation", Float) = 0
-        [ShowIf(_DebugRippleVis)] _DebugRippleVisScale("Ripple Debug Exaggeration", Float) = 40
-        [Toggle] _DebugDistortionMask("Show Distortion Mask", Float) = 0
 
         [HideInInspector] _PocketStencilComp("Pocket Stencil Comparison", Float) = 6
     }
@@ -107,12 +99,10 @@ Shader "SpookyWater/Water Front"
                 half2  lightingUV : TEXCOORD1;
                 float4 screenPos  : TEXCOORD2;
                 float3 positionWS : TEXCOORD3;
-                float  debugHeight : TEXCOORD4;
-                float2 surfaceInfo : TEXCOORD5;
+                float2 surfaceInfo : TEXCOORD4;
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            TEXTURE2D(_MainTex);                 SAMPLER(sampler_MainTex);
             TEXTURE2D(_CameraSortingLayerTexture); SAMPLER(sampler_CameraSortingLayerTexture);
             TEXTURE2D(_WaterDistortionMask); SAMPLER(sampler_WaterDistortionMask);
 
@@ -158,7 +148,6 @@ Shader "SpookyWater/Water Front"
                 half _WaterlineRippleResponse;
                 half _WaterlineCrestBrightness;
                 half _RippleScale;
-                half _RippleHeightOffset;
                 half _EdgeFalloffWidth;
                 half _VerticalFalloffPower;
                 half _WaterlinePosition;
@@ -170,10 +159,6 @@ Shader "SpookyWater/Water Front"
                 half _DistortionRipple;
                 half _DistortionRippleDepth;
                 half _DistortionSurfaceCalm;
-                half _DebugHeightVis;
-                half _DebugRippleVis;
-                half _DebugRippleVisScale;
-                half _DebugDistortionMask;
             CBUFFER_END
 
             #include "../Includes/WaterCommon.hlsl"
@@ -232,32 +217,18 @@ Shader "SpookyWater/Water Front"
                 float2 fieldUV = WaterFieldUV(restWS);
 
                 float2 topWorldXZ = float2(restWS.x, _WaterFieldOrigin.y);
-                float h = SampleWaterHeight(topWorldXZ, _RippleScale, _RippleHeightOffset);
+                float h = SampleWaterHeight(topWorldXZ, _RippleScale);
                 float verticalFalloff = pow(saturate(input.uv.y), max(_VerticalFalloffPower, 0.001));
                 h *= WaterEdgeFalloff1D(fieldUV.x, _EdgeFalloffWidth) * verticalFalloff;
 
                 float3 displacedOS = input.positionOS + float3(0, h, 0);
                 Varyings o = WaterFinishVertex(input, displacedOS);
-                o.debugHeight = h;
                 o.surfaceInfo = input.surfaceInfo.z > 0.5 ? input.surfaceInfo.xy : float2(_WaterGlobalSurfaceY, _WaterlineMask);
                 return o;
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
-                if (_DebugRippleVis > 0.5)
-                {
-                    float2 dbgWorldXZ = float2(input.positionWS.x, _WaterFieldOrigin.y);
-                    float rawRipple = SampleRipple(dbgWorldXZ);
-                    return half4(RippleDebugColor(rawRipple, _DebugRippleVisScale), 1.0);
-                }
-
-                if (_DebugHeightVis > 0.5)
-                {
-                    half m = saturate(abs(input.debugHeight) * 50.0);
-                    return half4(input.debugHeight < 0 ? m : 0, input.debugHeight > 0 ? m : 0, 0, 1);
-                }
-
                 float2 screenUV = input.screenPos.xy / input.screenPos.w;
                 float t = _TimeParameters.x;
                 float surfaceY = input.surfaceInfo.x;
@@ -265,12 +236,6 @@ Shader "SpookyWater/Water Front"
                 half depthBelow = min(max(surfaceY - input.positionWS.y, 0.0), PocketLightDepth(input.positionWS.xy));
 
                 bool masked = _WaterDistortionMaskOn > 0.5;
-                if (_DebugDistortionMask > 0.5)
-                {
-                    half m = masked ? DistortionMask(screenUV) : 0.0;
-                    return half4(m, masked ? 0.25 : 0.0, 0.25, 1.0);
-                }
-
                 float2 offset = BackgroundDistortion(input.positionWS, depthBelow, t);
                 if (masked)
                 {
@@ -341,8 +306,6 @@ Shader "SpookyWater/Water Front"
                     albedo += _FoamColor.rgb * _WaterlineGlowStrength * glowBrightness * exp(-below / glowReach) * waterlineMask;
                     albedo = lerp(albedo, _FoamColor.rgb * brightness, foam);
                 }
-
-                albedo *= SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).rgb;
 
                 half glowFalloff = lerp(exp(-depthBelow / max(_GlowDepth, 1e-3)), 1.0, _GlowDeepAmount);
                 half3 emission = WaterGlowEmission(albedo, _GlowColor, _GlowIntensity, _GlowFollowColor) * glowFalloff;

@@ -55,8 +55,6 @@ Material:
     - _MistScale: 0.3
     - _MistSpeed: 0.15
     - _PocketStencilComp: 6
-    - _RippleHeightOffset: 0
-    - _RippleScale: 1
     - _SurfaceGlowDepth: 1
     - _VerticalFalloffPower: 1.6
     - _WaterDepthRange: 5

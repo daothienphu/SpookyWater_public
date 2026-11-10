@@ -90,8 +90,9 @@ namespace SpookyWater.Demo
 
             var caps = new System.Collections.Generic.List<KeyCap>();
             AddRow(panel, caps, "Move", KeyCode.W, KeyCode.A, KeyCode.S, KeyCode.D);
+            AddRow(panel, caps, "Jump", KeyCode.Space);
             AddRow(panel, caps, "Dash", KeyCode.K);
-            AddRow(panel, caps, "Leap", KeyCode.L);
+            AddRow(panel, caps, "Leap / Slam", KeyCode.L);
             _caps = caps.ToArray();
         }
 
@@ -110,9 +111,11 @@ namespace SpookyWater.Demo
                 var image = cap.gameObject.AddComponent<Image>();
                 image.color = _keyColor;
                 image.raycastTarget = false;
+                var keyName = key.ToString();
                 var size = cap.gameObject.AddComponent<LayoutElement>();
-                size.preferredWidth = size.preferredHeight = 44f;
-                var letter = CreateText(cap, key.ToString(), 24, FontStyle.Bold, TextAnchor.MiddleCenter);
+                size.preferredHeight = 44f;
+                size.preferredWidth = keyName.Length > 1 ? 44f + 14f * keyName.Length : 44f;
+                var letter = CreateText(cap, keyName, keyName.Length > 1 ? 20 : 24, FontStyle.Bold, TextAnchor.MiddleCenter);
                 letter.rectTransform.anchorMin = Vector2.zero;
                 letter.rectTransform.anchorMax = Vector2.one;
                 letter.rectTransform.offsetMin = letter.rectTransform.offsetMax = Vector2.zero;

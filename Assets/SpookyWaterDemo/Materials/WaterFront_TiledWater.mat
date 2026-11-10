@@ -41,6 +41,7 @@ Material:
     - _DistortionScale: 6
     - _DistortionSpeed: 0.3
     - _DistortionStrength: 0.006
+    - _DistortionSurfaceCalm: 1.2
     - _EdgeFalloffWidth: 0.043
     - _GlowDeepAmount: 0.1
     - _GlowDepth: 2
@@ -53,7 +54,7 @@ Material:
     - _MistLightDepth: 4
     - _MistScale: 0.3
     - _MistSpeed: 0.15
-    - _RippleHeightOffset: 0
+    - _PocketStencilComp: 6
     - _RippleScale: 1
     - _SurfaceGlowDepth: 1
     - _VerticalFalloffPower: 1.6
@@ -63,7 +64,7 @@ Material:
     - _WaterlineFoamWidth: 0.03
     - _WaterlineGlow: 0.06
     - _WaterlineGlowStrength: 0.4
-    - _WaterlinePosition: 1
+    - _WaterlinePosition: 0.999
     - _WaterlineRippleResponse: 1
     - _WaterlineThicknessVariation: 0.65
     - _WaterlineVariationScale: 0.7

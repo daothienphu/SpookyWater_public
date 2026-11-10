@@ -16,7 +16,9 @@ namespace SpookyWater
             "_ContactLineAmount", "_ContactLineReach", "_ContactReachPixels", "_ContactLineSpread", "_ContactLineScale",
             "_ContactWaveletLength", "_ContactWaveletThickness", "_ContactWaveletSoftness", "_ContactWaveletBreakup", "_ContactLapAmount", "_ContactLineSpeed", "_ContactDriftSpeed", "_ContactPerspective",
             "_ContactTwinkleSpeed", "_ContactSmearLength", "_ContactLineSkew", "_ContactRowShift", "_ContactFarBoost", "_ContactFarDistance", "_ContactBreak", "_ContactGlintChance",
-            "_GlowIntensity", "_GlowSelfLit", "_GlowFollowColor", "_GlowUnderside"
+            "_GlowIntensity", "_GlowSelfLit", "_GlowFollowColor", "_GlowUnderside",
+            "_EdgeFalloffWidth", "_DisplacementFalloffPower", "_ColorFadePower", "_HazeDistance", "_EdgeFadeStart",
+            "_UnderwaterFogDistance", "_UnderwaterFadeDistance", "_UnderwaterFadeAmount"
         };
 
         private static readonly string[] HorizonInheritedVectors = { "_ReflectionOffset" };
@@ -28,14 +30,45 @@ namespace SpookyWater
         private static readonly string[] HorizonInheritedColors =
         {
             "_ReflectionTint", "_ReflectionSkyColor", "_UnderwaterTint", "_UnderwaterSkyColor", "_UnderwaterColor",
-            "_DepthFogColor", "_ContactGlintColor", "_GlowColor", "_RippleHighlightColor"
+            "_DepthFogColor", "_ContactGlintColor", "_GlowColor", "_RippleHighlightColor",
+            "_HorizonColor", "_UnderwaterHazeColor"
         };
+
+        private static readonly int NearColorId = Shader.PropertyToID("_NearColor");
+        private static readonly int DeepColorId = Shader.PropertyToID("_DeepColor");
+        private const string HorizonObjectName = "WaterHorizonExtension";
+        private const string HorizonShaderName = "SpookyWater/Water Horizon";
+
+        private Material _horizonMaterial;
+
+        private bool HorizonEnabled => _generateHorizon && HorizonMaterial;
+
+        // Built from the shader at runtime and never saved: every value comes from the Surface material.
+        private Material HorizonMaterial
+        {
+            get
+            {
+                if (_horizonMaterial) return _horizonMaterial;
+                if (!_horizonShader) _horizonShader = Shader.Find(HorizonShaderName);
+                if (!_horizonShader) return null;
+                _horizonMaterial = new Material(_horizonShader) { name = "WaterHorizon (Generated)", hideFlags = HideFlags.DontSave };
+                return _horizonMaterial;
+            }
+        }
+
+        private void DestroyHorizonMaterial()
+        {
+            if (!_horizonMaterial) return;
+            if (Application.isPlaying) Destroy(_horizonMaterial);
+            else DestroyImmediate(_horizonMaterial);
+            _horizonMaterial = null;
+        }
 
         private void PublishSurfaceGlobals()
         {
             var m = _surfaceMeshMaterial;
             Shader.SetGlobalVector(WaterSurfaceDisplacementId, new Vector4(
-                m.GetFloat(RippleScaleId) * _displacementScale, m.GetFloat(RippleHeightOffsetId),
+                _displacementScale, 0f,
                 m.GetFloat(DistanceFalloffPowerId), m.GetFloat(EdgeFalloffWidthId)));
             Shader.SetGlobalColor(WaterSurfaceFogColorId, m.GetColor(DepthFogColorId));
             Shader.SetGlobalVector(WaterSurfaceFogParamsId, new Vector4(
@@ -57,17 +90,50 @@ namespace SpookyWater
             {
                 if (_surfaceMeshMaterial.HasColor(name)) mpb.SetColor(name, _surfaceMeshMaterial.GetColor(name));
             }
+            if (_surfaceMeshMaterial.HasColor(DeepColorId)) mpb.SetColor(NearColorId, _surfaceMeshMaterial.GetColor(DeepColorId));
+        }
+
+        /// <summary>
+        /// Re-applies the Water Surface material's values to the generated horizon and the shared water globals
+        /// without regenerating. Called by the material inspector whenever a Water Surface material is edited.
+        /// </summary>
+        public void RefreshFromMaterials()
+        {
+            var root = _generatedRoot ? _generatedRoot : transform.Find(GeneratedRootName);
+            if (!_surfaceMeshMaterial || !_surfaceTilemap || !root) return;
+            PublishSurfaceGlobals();
+
+            var horizon = _horizonFilter ? _horizonFilter.transform : root.Find(HorizonObjectName);
+            if (!horizon || !horizon.TryGetComponent<MeshRenderer>(out var mr) || !HorizonMaterial) return;
+            mr.sharedMaterial = HorizonMaterial;
+            ApplyHorizonProperties(mr, horizon.position);
+        }
+
+        private void ApplyHorizonProperties(MeshRenderer mr, Vector3 origin)
+        {
+            var mpb = new MaterialPropertyBlock();
+            mpb.SetFloat(RippleScaleId, _displacementScale);
+            CopyHorizonInheritedProperties(mpb);
+            mr.SetPropertyBlock(mpb);
+
+            Shader.SetGlobalFloat(WaterHorizonEdgeFalloffId, _surfaceMeshMaterial.GetFloat(EdgeFalloffWidthId));
+            if (_surfaceMeshMaterial.HasColor(UnderwaterColorId) && _surfaceMeshMaterial.HasFloat(UnderwaterFogDistanceId))
+            {
+                Shader.SetGlobalColor(WaterUnderwaterColorId, UnderwaterMurkColor());
+                Shader.SetGlobalVector(WaterUnderwaterFogId, new Vector4(
+                    origin.z, Mathf.Max(_surfaceMeshMaterial.GetFloat(UnderwaterFogDistanceId), 1e-3f), 0f, 0f));
+            }
         }
 
         private void BuildHorizonExtension(Vector2 fieldOrigin, float fieldWidth, float nearZ, float worldY)
         {
-            var go = new GameObject("WaterHorizonExtension");
+            var go = new GameObject(HorizonObjectName);
             go.transform.SetParent(_generatedRoot, false);
             go.transform.position = new Vector3(fieldOrigin.x, worldY, nearZ);
 
             var mf = go.AddComponent<MeshFilter>();
             var mr = go.AddComponent<MeshRenderer>();
-            mr.sharedMaterial = _horizonMaterial;
+            mr.sharedMaterial = HorizonMaterial;
             var sg = go.AddComponent<SortingGroup>();
             sg.sortingLayerID = SpookyWaterSettings.Instance.SurfaceSortingLayerId;
 
@@ -77,24 +143,11 @@ namespace SpookyWater
             _horizonNearZ = nearZ;
             var dx = BuildHorizonMesh();
 
-            var rippleScale = _horizonMaterial.GetFloat(RippleScaleId) * _displacementScale;
-            var mpb = new MaterialPropertyBlock();
-            mpb.SetFloat(RippleScaleId, rippleScale);
-            CopyHorizonInheritedProperties(mpb);
-            mr.SetPropertyBlock(mpb);
-
             var origin = go.transform.position;
             Shader.SetGlobalVector(WaterHorizonSeamId, new Vector4(origin.z, Mathf.Max(_horizonSeamBlend, 1e-3f), dx, origin.x));
             Shader.SetGlobalVector(WaterHorizonHeightScaleId, new Vector4(
-                rippleScale, _horizonMaterial.GetFloat(RippleHeightOffsetId), 0f, 0f));
-            Shader.SetGlobalFloat(WaterHorizonEdgeFalloffId, _horizonMaterial.GetFloat(EdgeFalloffWidthId));
-
-            if (_surfaceMeshMaterial.HasColor(UnderwaterColorId) && _horizonMaterial.HasFloat(UnderwaterFogDistanceId))
-            {
-                Shader.SetGlobalColor(WaterUnderwaterColorId, UnderwaterMurkColor());
-                Shader.SetGlobalVector(WaterUnderwaterFogId, new Vector4(
-                    origin.z, Mathf.Max(_horizonMaterial.GetFloat(UnderwaterFogDistanceId), 1e-3f), 0f, 0f));
-            }
+                _displacementScale, 0f, 0f, 0f));
+            ApplyHorizonProperties(mr, origin);
         }
 
         private void OnWaterCameraChanged(Camera camera)
@@ -177,8 +230,8 @@ namespace SpookyWater
         private Color UnderwaterMurkColor()
         {
             var murk = _surfaceMeshMaterial.GetColor(UnderwaterColorId);
-            if (!_horizonMaterial.HasColor(UnderwaterHazeColorId)) return murk;
-            var haze = _horizonMaterial.GetColor(UnderwaterHazeColorId);
+            if (!_surfaceMeshMaterial.HasColor(UnderwaterHazeColorId)) return murk;
+            var haze = _surfaceMeshMaterial.GetColor(UnderwaterHazeColorId);
             var blended = Color.Lerp(murk.linear, haze.linear, haze.a).gamma;
             blended.a = 1f;
             return blended;

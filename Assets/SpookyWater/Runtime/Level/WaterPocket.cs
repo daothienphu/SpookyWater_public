@@ -69,7 +69,7 @@ namespace SpookyWater
                  "reflection, so the strip mirrors the material's Reflection Sky Color; a copy of the surface material " +
                  "tuned for the pocket usually looks best.")]
         [SerializeField] private Material _surfaceMaterial;
-        [Tooltip("Multiplies the Ripple Height of the pocket's materials, set per renderer so the assets are untouched. " +
+        [Tooltip("How far the interactive ripples move the pocket's water up and down, set per renderer. " +
                  "Below 1 gives the pocket smaller waves than the open lake.")]
         [Min(0f)] [SerializeField] private float _displacementScale = 1f;
         [Tooltip("Mesh segments of the surface strip: X per world unit across, Z over the whole depth.")]
@@ -458,7 +458,7 @@ namespace SpookyWater
             var material = Own(new Material(lineMaterial) { name = lineMaterial.name + " (Pocket)" });
             material.SetFloat(PocketStencilCompId, StencilEqual);
             var renderer = CreateRenderer("FrontWater", mesh, material, SpookyWaterSettings.Instance.FrontSortingLayerId, 0);
-            SetRippleScale(renderer, lineMaterial);
+            SetRippleScale(renderer);
             renderer.gameObject.AddComponent<WaterTile>().Initialize(WaterCellKind.Line, field);
             field.AddLocalRenderer(renderer);
         }
@@ -506,7 +506,7 @@ namespace SpookyWater
             mesh.bounds = bounds;
 
             var renderer = CreateRenderer("Surface", mesh, surfaceMaterial, SpookyWaterSettings.Instance.SurfaceSortingLayerId, 0);
-            SetRippleScale(renderer, surfaceMaterial);
+            SetRippleScale(renderer);
             var go = renderer.gameObject;
             go.AddComponent<WaterTile>().Initialize(WaterCellKind.Surface, field);
             var box = go.AddComponent<BoxCollider>();
@@ -652,11 +652,11 @@ namespace SpookyWater
             return renderer;
         }
 
-        private void SetRippleScale(Renderer renderer, Material source)
+        private void SetRippleScale(Renderer renderer)
         {
             var block = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(block);
-            block.SetFloat(RippleScaleId, (source.HasFloat(RippleScaleId) ? source.GetFloat(RippleScaleId) : 1f) * Mathf.Max(_displacementScale, 0f));
+            block.SetFloat(RippleScaleId, Mathf.Max(_displacementScale, 0f));
             renderer.SetPropertyBlock(block);
         }
 

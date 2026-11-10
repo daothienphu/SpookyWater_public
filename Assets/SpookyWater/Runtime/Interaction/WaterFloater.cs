@@ -12,7 +12,7 @@ namespace SpookyWater
     [HelpURL(SpookyWaterDocs.Floater)]
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody2D))]
-    public class WaterFloater : MonoBehaviour
+    public class WaterFloater : MonoBehaviour, IWaterCrossingBody
     {
         [Tooltip("Platform: a stiff raft that dips a little when landed on, leans toward whoever stands near an end, never lets its top go under and stays where it was placed. Object: a crate, log or barrel that sinks under anything standing on it and bobs back up once it steps off.")]
         [SerializeField] private WaterFloaterMode _mode = WaterFloaterMode.Platform;
@@ -69,6 +69,9 @@ namespace SpookyWater
         [Tooltip("Scales the wake dragged while drifting along the surface (0 = no wake).")]
         [SerializeField, Min(0f)] private float _wakeStrength = 0.5f;
 
+        [Group("Water Crossing")]
+        [SerializeField] private WaterCrossing _crossing = new();
+
         private const int MaxRippleStretches = 4;
 
         private readonly ContactPoint2D[] _contacts = new ContactPoint2D[16];
@@ -88,6 +91,7 @@ namespace SpookyWater
         private Vector3 _lastWakePoint;
 
         public float SinkOffset => _sinkOffset;
+        public WaterCrossing Crossing => _crossing;
 
         private void Reset()
         {
@@ -293,7 +297,8 @@ namespace SpookyWater
         private bool IsOtherDynamic(Collider2D other, out Rigidbody2D otherBody)
         {
             otherBody = other && !other.isTrigger ? other.attachedRigidbody : null;
-            return otherBody && otherBody != _body && otherBody.bodyType == RigidbodyType2D.Dynamic;
+            return otherBody && otherBody != _body && otherBody.bodyType == RigidbodyType2D.Dynamic &&
+                   !otherBody.TryGetComponent<WaterFloater>(out _);
         }
 
         private void UpdateRipples(float dt)

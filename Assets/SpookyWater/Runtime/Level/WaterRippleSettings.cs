@@ -142,7 +142,7 @@ namespace SpookyWater
                  "Waves travel this way and their crests lie across it.")]
         [Range(0f, 360f)] public float direction = 270f;
         [Tooltip("Height of the wind waves at full Strength, in the same units as the ripple simulation " +
-                 "(multiplied by each material's Ripple Height). Even small values break up the reflection " +
+                 "(multiplied by the builder's Displacement Scale). Even small values break up the reflection " +
                  "a lot, because the reflection follows the slope rather than the height.")]
         [Min(0f)] public float waveHeight = 0.08f;
         [Tooltip("World-unit distance between the main wave crests. Two smaller sets of waves ride on top at " +

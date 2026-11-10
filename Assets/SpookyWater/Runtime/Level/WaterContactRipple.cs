@@ -46,6 +46,8 @@ namespace SpookyWater
             public bool CanEnter;
             public bool CanExit;
             public Vector2 PeakVelocity;
+            public ContactRippleSettings Settings;
+            public float SplashScale;
         }
 
         private static readonly ContactRippleSettings DefaultSettings = new();
@@ -73,16 +75,25 @@ namespace SpookyWater
             if (!_field) return;
             if ((_layers.value & (1 << other.gameObject.layer)) == 0) return;
 
-            var up = other.attachedRigidbody
-                ? other.attachedRigidbody.linearVelocity.y > 0f
-                : Random.value > 0.5f;
+            var body = other.attachedRigidbody;
+            var up = body ? body.linearVelocity.y > 0f : Random.value > 0.5f;
+            var settings = _settings;
+            var splashScale = 1f;
+            if (body && body.TryGetComponent<IWaterCrossingBody>(out var source) && source.Crossing != null)
+            {
+                settings = source.Crossing.RippleOr(_settings);
+                splashScale = source.Crossing.splashScale;
+            }
 
             _field.CreateContactRippleAt(other.transform.position,
-                Random.Range(_settings.strengthRange.x, _settings.strengthRange.y), up);
+                Random.Range(settings.strengthRange.x, settings.strengthRange.y), up);
 
-            var body = other.attachedRigidbody;
             if (!body) return;
-            _crossings[other] = new Crossing { CanEnter = !up, CanExit = up, PeakVelocity = body.linearVelocity };
+            _crossings[other] = new Crossing
+            {
+                CanEnter = !up, CanExit = up, PeakVelocity = body.linearVelocity,
+                Settings = settings, SplashScale = splashScale
+            };
             TrackSplash(other);
         }
 
@@ -100,45 +111,48 @@ namespace SpookyWater
             var bounds = other.bounds;
             var submerged = Mathf.Clamp01((surfaceY - bounds.min.y) / Mathf.Max(bounds.size.y, 1e-3f));
             var velocity = body.linearVelocity;
+            var settings = c.Settings ?? _settings;
 
             if (c.CanEnter && velocity.y < c.PeakVelocity.y || c.CanExit && velocity.y > c.PeakVelocity.y)
                 c.PeakVelocity = velocity;
 
-            if (submerged <= _settings.enterArmFraction && !c.CanEnter)
+            if (submerged <= settings.enterArmFraction && !c.CanEnter)
             {
                 c.CanEnter = true;
                 c.PeakVelocity = velocity;
             }
-            if (submerged >= _settings.exitArmFraction && !c.CanExit)
+            if (submerged >= settings.exitArmFraction && !c.CanExit)
             {
                 c.CanExit = true;
                 c.PeakVelocity = velocity;
             }
 
             var sizeScale = Mathf.Sqrt(Mathf.Max(bounds.size.x, 0.1f));
-            if (c.CanEnter && submerged >= _settings.enterSplashFraction && velocity.y < 0f)
+            var splashSize = sizeScale * c.SplashScale;
+            if (c.CanEnter && submerged >= settings.enterSplashFraction && velocity.y < 0f)
             {
-                splashes.Impact(body, surfaceY, c.PeakVelocity, sizeScale);
-                SplashRipple(other, surfaceY, c.PeakVelocity, sizeScale);
+                if (splashSize > 0f) splashes.Impact(body, surfaceY, c.PeakVelocity, splashSize);
+                SplashRipple(other, settings, surfaceY, c.PeakVelocity, sizeScale);
                 c.CanEnter = false;
             }
-            else if (c.CanExit && submerged <= _settings.exitSplashFraction && velocity.y > 0f)
+            else if (c.CanExit && submerged <= settings.exitSplashFraction && velocity.y > 0f)
             {
-                splashes.Impact(body, surfaceY, c.PeakVelocity, sizeScale);
-                SplashRipple(other, surfaceY, c.PeakVelocity, sizeScale);
+                if (splashSize > 0f) splashes.Impact(body, surfaceY, c.PeakVelocity, splashSize);
+                SplashRipple(other, settings, surfaceY, c.PeakVelocity, sizeScale);
                 c.CanExit = false;
             }
             _crossings[other] = c;
         }
 
-        private void SplashRipple(Collider2D other, float surfaceY, Vector2 velocity, float sizeScale)
+        private void SplashRipple(Collider2D other, ContactRippleSettings settings, float surfaceY, Vector2 velocity,
+            float sizeScale)
         {
-            var strength = Mathf.Min(Mathf.Abs(velocity.y) * _settings.splashRipplePerSpeed * sizeScale, _settings.maxSplashRipple);
+            var strength = Mathf.Min(Mathf.Abs(velocity.y) * settings.splashRipplePerSpeed * sizeScale, settings.maxSplashRipple);
             if (strength <= 0f || !_field) return;
 
             var centre = other.bounds.center;
             _field.CreateContactRippleAt(new Vector3(centre.x, surfaceY, other.transform.position.z), strength,
-                velocity.y > 0f, _settings.splashRippleRadius);
+                velocity.y > 0f, settings.splashRippleRadius);
         }
 
         private bool TryGetWaterline(Bounds body, out float surfaceY)

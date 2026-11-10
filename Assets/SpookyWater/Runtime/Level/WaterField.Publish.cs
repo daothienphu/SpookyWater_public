@@ -43,7 +43,6 @@ namespace SpookyWater
             PublishVector(WaterWindShapeId, Vector4.zero);
             PublishVector(WaterWindPhaseId, Vector4.zero);
             PublishVector(HorizonSeamId, Vector4.zero);
-            PublishVector(DebugClickMarkerDataId, new Vector4(0f, 0f, -1000f, 1f));
             PublishTexture(PlanarReflectionTexId, Texture2D.blackTexture);
             PublishFloat(ViewedFromBelowId, 0f);
 

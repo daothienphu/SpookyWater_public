@@ -28,7 +28,7 @@ namespace SpookyWater.Editor
             else if (builder.FrontTilemap.GetUsedTilesCount() == 0)
             {
                 EditorGUILayout.HelpBox("The Front Tilemap is empty. Paint the Water Body tile on it, and the Water Surface tile on the Surface Tilemap. " +
-                                        "Assets > Create > SpookyWater > Tile Palette (or the Create Tile Palette button below) makes a palette with both tiles.", MessageType.Info);
+                                        "Pick WaterTilePalette (in SpookyWater/Tiles) in Window > 2D > Tile Palette; it has both tiles. Create Tile Palette below makes another copy.", MessageType.Info);
             }
 
             DrawMissingAssets(serializedObject,

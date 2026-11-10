@@ -7,6 +7,7 @@ namespace SpookyWater
         public const string Builder = Base + "#water-tilemap-builder";
         public const string SplashEffects = Base + "#water-splash-effects";
         public const string Floater = Base + "#water-floater";
+        public const string Splashes = Base + "#objects-falling-in-jumping-out";
         public const string SurfaceDebris = Base + "#water-surface-debris";
         public const string RippleObstacle = Base + "#water-ripple-obstacle";
         public const string Pocket = Base + "#water-pocket";

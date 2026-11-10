@@ -14,6 +14,31 @@ half4 SampleReflectionBlurred(float2 uv, float radius)
     return c * (1.0 / 5.0);
 }
 
+// Soft disc blur: 16 taps on a golden-angle spiral with Gaussian falloff, rotated per pixel so the
+// taps never line up into ghost copies. Radius is a fraction of screen height (round on any aspect).
+half4 SampleReflectionDiscBlur(float2 uv, float radius)
+{
+    [branch] if (radius < 1e-5)
+        return SAMPLE_TEXTURE2D_LOD(_PlanarReflectionTexture, sampler_PlanarReflectionTexture, uv, 0);
+
+    float2 pixel = uv * _ScreenParams.xy;
+    float rotation = frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715)))) * 6.2831853;
+    float2 scale = float2(radius * _ScreenParams.y / _ScreenParams.x, radius);
+
+    half4 sum = 0;
+    half weightSum = 0;
+    [unroll] for (int i = 0; i < 16; i++)
+    {
+        float r = sqrt((i + 0.5) / 16.0);
+        float angle = i * 2.39996323 + rotation;
+        half w = exp(-2.0 * r * r);
+        sum += SAMPLE_TEXTURE2D_LOD(_PlanarReflectionTexture, sampler_PlanarReflectionTexture,
+            uv + float2(cos(angle), sin(angle)) * r * scale, 0) * w;
+        weightSum += w;
+    }
+    return sum / weightSum;
+}
+
 half4 SampleReflectionSmeared(float2 uv, float2 halfSize, float radius)
 {
     half4 c = SampleReflectionBlurred(uv, radius);

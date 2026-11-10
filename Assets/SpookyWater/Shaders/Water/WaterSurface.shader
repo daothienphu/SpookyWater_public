@@ -2,16 +2,14 @@ Shader "SpookyWater/Water Surface"
 {
     Properties
     {
-        [Section(Surface)] _RippleScale("Ripple Height", Float) = 1
-        _RippleHeightOffset("Height Offset", Float) = 0
-        _DistanceFalloffPower("Distance Falloff", Range(0.1, 4)) = 1
+        [HideInInspector] _RippleScale("Ripple Scale", Float) = 1
+        [Section(Surface)] _DistanceFalloffPower("Distance Falloff", Range(0.1, 4)) = 1
         _EdgeFalloffWidth("Edge Falloff", Range(0.001, 0.25)) = 0.03
         _NormalStrength("Normal Strength", Range(0, 8)) = 2.5
 
-        [Section(Color)] _ShallowColor("Shallow Color", Color) = (0.55, 0.85, 0.85, 1)
-        _DeepColor("Deep Color", Color) = (0.043, 0.145, 0.235, 1)
+        [Section(Color)] _ShallowColor("Near Color", Color) = (0.55, 0.85, 0.85, 1)
+        _DeepColor("Far Color", Color) = (0.043, 0.145, 0.235, 1)
         _DepthGradientPower("Depth Gradient Curve", Range(0.1, 6)) = 1.6
-        _RimStrength("Rim Strength", Range(0, 2)) = 0.35
 
         [Section(Glow)] _GlowIntensity("Glow Intensity", Range(0, 8)) = 0
         [ShowIf(_GlowIntensity)] [HDR] _GlowColor("Glow Color", Color) = (0.3, 0.6, 1, 1)
@@ -26,7 +24,7 @@ Shader "SpookyWater/Water Surface"
         [ShowIf(_DepthFogColor)] _DepthFogPower("Fog Curve", Range(0.1, 4)) = 1
         [ShowIf(_DepthFogColor)] _DepthFogReflection("Fog On Reflections", Range(0, 1)) = 0.25
 
-        [Section(Reflection)] _ReflectionOffset("Reflection Offset", Vector) = (0, 0, 0, 0)
+        [Section(Reflection)] [Vector2] _ReflectionOffset("Reflection Offset", Vector) = (0, 0, 0, 0)
         _ReflectionDistortion("Distortion", Range(0, 0.2)) = 0.03
         _ReflectionBlurSize("Blur", Range(0, 0.02)) = 0.004
         _ReflectionTint("Tint", Color) = (1, 1, 1, 1)
@@ -63,9 +61,15 @@ Shader "SpookyWater/Water Surface"
         _RippleHighlightGain("Highlight Gain", Range(0, 20)) = 4
         _RippleHighlightOpacity("Highlight Opacity", Range(0, 1)) = 0.6
 
-        [Section(Shimmer)] _ShimmerStrength("Shimmer Strength", Range(0, 1)) = 0
-        [ShowIf(_ShimmerStrength)] _ShimmerColor("Color", Color) = (0.45, 0.95, 1, 1)
-        [ShowIf(_ShimmerStrength)] _ShimmerScale("Scale", Float) = 1
+        [Section(Horizon)] _HorizonColor("Horizon Color", Color) = (0.55, 0.68, 0.78, 1)
+        _ColorFadePower("Color Fade Curve", Range(0.1, 6)) = 1.2
+        _HazeDistance("Haze Distance", Float) = 45
+        _EdgeFadeStart("Edge Fade Start", Range(0, 1)) = 0.85
+        _DisplacementFalloffPower("Wave Falloff", Range(0.1, 6)) = 2
+        _UnderwaterFogDistance("Underwater Fog Distance", Float) = 15
+        _UnderwaterHazeColor("Underwater Haze Color", Color) = (0.87, 0.99, 0.98, 0)
+        _UnderwaterFadeDistance("Underwater Fade Distance", Float) = 12
+        _UnderwaterFadeAmount("Underwater Fade Amount", Range(0, 1)) = 0.2
 
         [Section(Underside)] _UnderwaterTint("See-Through Tint", Color) = (0.75, 0.95, 0.95, 1)
         _UnderwaterSkyColor("See-Through Sky Color", Color) = (0.55, 0.8, 0.9, 1)
@@ -78,13 +82,6 @@ Shader "SpookyWater/Water Surface"
         _UnderwaterWindowAngle("Window Angle", Range(0, 90)) = 90
         _UnderwaterWindowSoftness("Window Softness", Range(0.001, 0.5)) = 0.08
 
-        [Section(Detail)] _MainTex("Detail Texture", 2D) = "white" {}
-
-        [Section(Debug)] [Toggle] _DebugRippleVis("Show Ripple Simulation", Float) = 0
-        [ShowIf(_DebugRippleVis)] _DebugRippleVisScale("Exaggeration", Float) = 40
-        [Toggle] _DebugClickMarker("Show Contact Point", Float) = 0
-        [ShowIf(_DebugClickMarker)] _DebugClickMarkerRadius("Marker Radius", Float) = 0.15
-        [ShowIf(_DebugClickMarker)] _DebugClickMarkerFadeTime("Marker Fade Time", Float) = 1.5
     }
 
     SubShader
@@ -127,21 +124,17 @@ Shader "SpookyWater/Water Surface"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            TEXTURE2D(_MainTex);               SAMPLER(sampler_MainTex);
-            float4 _DebugClickMarkerData;
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _ShallowColor;
                 half4 _DeepColor;
                 half _DepthGradientPower;
-                half _RimStrength;
                 half4 _DepthFogColor;
                 float _DepthFogStartZ;
                 float _DepthFogEndZ;
                 half _DepthFogPower;
                 half _DepthFogReflection;
                 half _RippleScale;
-                half _RippleHeightOffset;
                 half _NormalStrength;
                 half _DistanceFalloffPower;
                 half _EdgeFalloffWidth;
@@ -156,9 +149,6 @@ Shader "SpookyWater/Water Surface"
                 half4 _RippleHighlightColor;
                 half _RippleHighlightGain;
                 half _RippleHighlightOpacity;
-                half _ShimmerStrength;
-                half4 _ShimmerColor;
-                float _ShimmerScale;
                 half _ContactLineAmount;
                 float _ContactLineReach;
                 half _ContactReachPixels;
@@ -182,11 +172,6 @@ Shader "SpookyWater/Water Surface"
                 half _ContactBreak;
                 half4 _ContactGlintColor;
                 half _ContactGlintChance;
-                half _DebugRippleVis;
-                half _DebugRippleVisScale;
-                half _DebugClickMarker;
-                half _DebugClickMarkerRadius;
-                half _DebugClickMarkerFadeTime;
                 half4 _UnderwaterTint;
                 half4 _UnderwaterSkyColor;
                 half4 _UnderwaterColor;
@@ -217,7 +202,7 @@ Shader "SpookyWater/Water Surface"
 
                 refraction.y = max(refraction.y, 0.0);
                 float2 throughUV = screenUV + refraction;
-                half4 seen = SampleReflectionBlurred(throughUV, _UnderwaterBlurSize);
+                half4 seen = SampleReflectionDiscBlur(throughUV, _UnderwaterBlurSize);
                 half3 through = (seen.rgb + _UnderwaterSkyColor.rgb * (1.0 - saturate(seen.a))) * _UnderwaterTint.rgb;
                 half3 viewDirWS = normalize(GetCameraPositionWS() - input.positionWS);
                 half cosView = saturate(dot(-normalWS, viewDirWS));
@@ -234,7 +219,6 @@ Shader "SpookyWater/Water Surface"
                 albedo = lerp(albedo, _RippleHighlightColor.rgb, lit / (lit + 1.0) * highlightMask);
                 albedo *= 1.0 - shade / (shade + 1.0) * highlightMask * 0.5;
 
-                albedo *= SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).rgb;
                 half3 emission = WaterGlowEmission(albedo, _GlowColor, _GlowIntensity * _GlowUnderside, _GlowFollowColor)
                     * (1.0 + _GlowRippleBoost * lit / (lit + 1.0));
                 return WaterFinishGlowFragment(albedo, 1.0, emission, _GlowSelfLit * step(1e-4, _GlowIntensity), input);
@@ -245,7 +229,7 @@ Shader "SpookyWater/Water Surface"
                 float3 restWS = TransformObjectToWorld(input.positionOS);
                 float2 fieldUV = WaterFieldUV(restWS);
                 float settle = pow(saturate(1.0 - fieldUV.y), _DistanceFalloffPower);
-                float h = SampleWaterHeight(restWS.xz, _RippleScale, _RippleHeightOffset);
+                float h = SampleWaterHeight(restWS.xz, _RippleScale);
                 h *= WaterEdgeFalloff1D(fieldUV.x, _EdgeFalloffWidth) * settle;
                 h = BlendIntoHorizonSeam(h, restWS);
 
@@ -261,12 +245,6 @@ Shader "SpookyWater/Water Surface"
                 bool fromBelow = _WaterViewedFromBelow > 0.5;
                 bool isFrontFace = IS_FRONT_VFACE(frontFace, true, false);
                 if (isFrontFace == fromBelow) discard;
-
-                if (_DebugRippleVis > 0.5)
-                {
-                    float rawRipple = SampleRipple(input.positionWS.xz);
-                    return half4(RippleDebugColor(rawRipple, _DebugRippleVisScale), 1.0);
-                }
 
                 float2 screenUV = input.flatScreenPos.xy / input.flatScreenPos.w;
                 float2 dPdx = ddx(input.positionWS.xz);
@@ -301,8 +279,6 @@ Shader "SpookyWater/Water Surface"
                 half3 albedo = WaterDepthGradient(_ShallowColor.rgb, _DeepColor.rgb, input.fieldUV.y, _DepthGradientPower);
                 half3 viewDirWS = normalize(GetCameraPositionWS() - input.positionWS);
                 half viewDot = saturate(dot(normalWS, viewDirWS));
-                half fresnel = pow(1.0 - viewDot, 3.0);
-                albedo += fresnel * _RimStrength * _ShallowColor.rgb;
 
                 float2 strokeUV = WaterStrokeScreenSize(strokeLength, rowSpacing, dPdx, dPdy);
                 float2 distortion = normalOS.xz * _ReflectionDistortion;
@@ -323,18 +299,6 @@ Shader "SpookyWater/Water Surface"
                 albedo = lerp(albedo, reflection, reflectionMix);
                 half fogScale = WaterReflectionFogScale(reflectionMix, reflected.a, _DepthFogReflection);
 
-                if (_ShimmerStrength > 0.0)
-                {
-                    float2 q = input.positionWS.xz * float2(0.7, 9.0) * max(_ShimmerScale, 0.001);
-                    q += float2(_TimeParameters.x * 0.05, -_TimeParameters.x * 0.4);
-                    float n = WaterNoiseD(q).x + 0.35 * WaterNoiseD(q * 1.91 + 13.7).x;
-                    float aa = max(fwidth(n), 0.015);
-                    float crest = smoothstep(0.22 - aa, 0.36 + aa, n);
-                    float footprint = max(length(ddx(q)), length(ddy(q)));
-                    float visible = 1.0 - smoothstep(0.3, 1.2, footprint);
-                    albedo = lerp(albedo, _ShimmerColor.rgb, crest * visible * _ShimmerStrength);
-                }
-
                 float2 toCameraXZ = normalize(GetCameraPositionWS().xz - input.positionWS.xz + 1e-5);
                 half facing = -dot(RippleGradient(input.positionWS.xz, 0.02) * _RippleScale, toCameraXZ) * _RippleHighlightGain;
                 half lit = max(facing, 0.0);
@@ -343,20 +307,6 @@ Shader "SpookyWater/Water Surface"
                 albedo = lerp(albedo, _RippleHighlightColor.rgb, lit / (lit + 1.0) * highlightMask);
                 albedo *= 1.0 - shade / (shade + 1.0) * highlightMask * 0.5;
 
-                if (_DebugClickMarker > 0.5)
-                {
-                    half clickAge = _TimeParameters.x - _DebugClickMarkerData.z;
-                    if (clickAge >= 0.0 && clickAge < _DebugClickMarkerFadeTime)
-                    {
-                        half clickDist = distance(input.positionWS.xz, _DebugClickMarkerData.xy);
-                        half circleMask = 1.0 - smoothstep(_DebugClickMarkerRadius * 0.85, _DebugClickMarkerRadius, clickDist);
-                        half fade = 1.0 - saturate(clickAge / _DebugClickMarkerFadeTime);
-                        half3 markerColor = _DebugClickMarkerData.w >= 0.0 ? half3(0.2, 0.45, 1.0) : half3(1.0, 0.2, 0.2);
-                        albedo = lerp(albedo, markerColor, circleMask * fade);
-                    }
-                }
-
-                albedo *= SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).rgb;
                 albedo = ApplyWaterDepthFog(albedo, input.positionWS.z, _DepthFogColor, _DepthFogStartZ, _DepthFogEndZ, _DepthFogPower, fogScale);
 
                 half3 emission = WaterGlowEmission(albedo, _GlowColor, _GlowIntensity, _GlowFollowColor)

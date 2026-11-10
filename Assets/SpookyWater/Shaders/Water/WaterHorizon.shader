@@ -2,22 +2,20 @@ Shader "SpookyWater/Water Horizon"
 {
     Properties
     {
-        [Section(Surface)] _RippleScale("Ripple Height", Float) = 1
-        _RippleHeightOffset("Height Offset", Float) = 0
-        _EdgeFalloffWidth("Edge Falloff", Range(0.001, 0.25)) = 0.03
-        _DisplacementFalloffPower("Displacement Falloff", Range(0.1, 6)) = 2
+        [HideInInspector] _RippleScale("Ripple Scale", Float) = 1
+        [HideInInspector] _EdgeFalloffWidth("Edge Falloff", Range(0.001, 0.25)) = 0.03
+        [HideInInspector] _DisplacementFalloffPower("Displacement Falloff", Range(0.1, 6)) = 2
 
-        [Section(Horizon)] _NearColor("Near Color", Color) = (0.043, 0.145, 0.235, 1)
-        _HorizonColor("Horizon Color", Color) = (0.55, 0.68, 0.78, 1)
-        _ColorFadePower("Color Fade Curve", Range(0.1, 6)) = 1.2
-        _HazeDistance("Haze Distance", Float) = 45
-        _UnderwaterFogDistance("Underwater Fog Distance", Float) = 15
-        _UnderwaterHazeColor("Underwater Haze Color", Color) = (0.87, 0.99, 0.98, 0)
-        _UnderwaterFadeDistance("Underwater Fade Distance", Float) = 12
-        _UnderwaterFadeAmount("Underwater Fade Amount", Range(0, 1)) = 0.2
-        _EdgeFadeStart("Edge Fade Start", Range(0, 1)) = 0.85
+        [HideInInspector] _NearColor("Near Color", Color) = (0.043, 0.145, 0.235, 1)
+        [HideInInspector] _HorizonColor("Horizon Color", Color) = (0.55, 0.68, 0.78, 1)
+        [HideInInspector] _ColorFadePower("Color Fade Curve", Range(0.1, 6)) = 1.2
+        [HideInInspector] _HazeDistance("Haze Distance", Float) = 45
+        [HideInInspector] _UnderwaterFogDistance("Underwater Fog Distance", Float) = 15
+        [HideInInspector] _UnderwaterHazeColor("Underwater Haze Color", Color) = (0.87, 0.99, 0.98, 0)
+        [HideInInspector] _UnderwaterFadeDistance("Underwater Fade Distance", Float) = 12
+        [HideInInspector] _UnderwaterFadeAmount("Underwater Fade Amount", Range(0, 1)) = 0.2
+        [HideInInspector] _EdgeFadeStart("Edge Fade Start", Range(0, 1)) = 0.85
 
-        [Section(Detail)] _MainTex("Detail Texture", 2D) = "white" {}
 
         [HideInInspector] _ReflectionOffset("Reflection UV Offset", Vector) = (0, 0, 0, 0)
         [HideInInspector] _ReflectionBlurSize("Reflection Blur Size", Float) = 0.004
@@ -113,7 +111,6 @@ Shader "SpookyWater/Water Horizon"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _DepthFogColor;
@@ -130,7 +127,6 @@ Shader "SpookyWater/Water Horizon"
                 half4 _HorizonColor;
                 half _ColorFadePower;
                 half _RippleScale;
-                half _RippleHeightOffset;
                 half _EdgeFalloffWidth;
                 half _DisplacementFalloffPower;
                 half _HazeDistance;
@@ -191,7 +187,7 @@ Shader "SpookyWater/Water Horizon"
                 float3 restWS = TransformObjectToWorld(input.positionOS);
                 float2 fieldUV = WaterFieldUV(restWS);
                 float settle = pow(saturate(1.0 - input.uv.y), _DisplacementFalloffPower);
-                float h = SampleWaterHeight(restWS.xz, _RippleScale, _RippleHeightOffset);
+                float h = SampleWaterHeight(restWS.xz, _RippleScale);
                 h *= WaterEdgeFalloff1D(fieldUV.x, _EdgeFalloffWidth) * settle;
 
                 float3 displacedOS = input.positionOS + float3(0, h, 0);
@@ -218,7 +214,7 @@ Shader "SpookyWater/Water Horizon"
                     float2 windRefraction = windGradient * _UnderwaterRippleRefraction;
                     windRefraction.y = max(windRefraction.y, 0.0);
                     float2 throughScreenUV = input.screenPos.xy / input.screenPos.w + windRefraction;
-                    half4 seen = SampleReflectionBlurred(throughScreenUV, _UnderwaterBlurSize);
+                    half4 seen = SampleReflectionDiscBlur(throughScreenUV, _UnderwaterBlurSize);
                     half3 through = (seen.rgb + _UnderwaterSkyColor.rgb * (1.0 - saturate(seen.a))) * _UnderwaterTint.rgb;
                     half cosWindow = cos(radians(_UnderwaterWindowAngle));
                     half window = _UnderwaterWindowAngle >= 89.9 ? 1.0
@@ -242,7 +238,6 @@ Shader "SpookyWater/Water Horizon"
 
                 half t = pow(saturate(input.uv.y), max(_ColorFadePower, 0.001));
                 half3 albedo = lerp(_NearColor.rgb, _HorizonColor.rgb, t);
-                albedo *= SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).rgb;
 
                 float2 screenUV = input.flatScreenPos.xy / input.flatScreenPos.w;
                 float2 dPdx = ddx(input.positionWS.xz);
@@ -283,7 +278,7 @@ Shader "SpookyWater/Water Horizon"
                 half edgeFade = smoothstep(_EdgeFadeStart, 1.0, input.uv.y);
                 albedo = lerp(albedo, _HorizonColor.rgb, edgeFade);
 
-                half3 emission = WaterGlowEmission(albedo, _GlowColor, _GlowIntensity, _GlowFollowColor) * (1.0 - haze) * (1.0 - edgeFade);
+                half3 emission = WaterGlowEmission(albedo, _GlowColor, _GlowIntensity, _GlowFollowColor) * (1.0 - edgeFade);
                 return WaterFinishGlowFragment(albedo, 1.0, emission, _GlowSelfLit * step(1e-4, _GlowIntensity), input);
             }
             ENDHLSL

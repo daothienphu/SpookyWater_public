@@ -16,7 +16,6 @@ namespace SpookyWater
         private static readonly int WaterHorizonHeightScaleId = Shader.PropertyToID("_WaterHorizonHeightScale");
         private static readonly int WaterHorizonEdgeFalloffId = Shader.PropertyToID("_WaterHorizonEdgeFalloff");
         private static readonly int EdgeFalloffWidthId = Shader.PropertyToID("_EdgeFalloffWidth");
-        private static readonly int RippleHeightOffsetId = Shader.PropertyToID("_RippleHeightOffset");
         private static readonly int DistanceFalloffPowerId = Shader.PropertyToID("_DistanceFalloffPower");
         private static readonly int DepthFogColorId = Shader.PropertyToID("_DepthFogColor");
         private static readonly int DepthFogStartZId = Shader.PropertyToID("_DepthFogStartZ");
@@ -56,16 +55,17 @@ namespace SpookyWater
         [Tooltip("Material for the fully submerged front glass. Use the SpookyWater/Water Front shader; it can be " +
                  "the same asset as the Line material.")]
         [SerializeField] private Material _bodyMeshMaterial;
-        [Tooltip("Optional material for a cheap extension of the water out to the horizon, so a perspective " +
-                 "camera sees water reaching the distance without painting tiles that far. Use the " +
-                 "SpookyWater/Water Horizon shader. Leave empty to skip it. Only built when a Surface Tilemap " +
-                 "is assigned.")]
-        [SerializeField] private Material _horizonMaterial;
         [Tooltip("Material that runs the ripple simulation. Use the Hidden/SpookyWater/Ripple Simulation shader. " +
                  "It is copied at runtime, so the asset is never modified.")]
         [SerializeField] private Material _rippleSimulationMaterial;
 
         [Group("Horizon")]
+        [Tooltip("Adds a cheap extension of the water out to the horizon, so a perspective camera sees water " +
+                 "reaching the distance without painting tiles that far. It has no material of its own: its " +
+                 "colors, haze and fog come from the Surface material (Far Color and the Horizon section). " +
+                 "Only built when a Surface Tilemap is assigned.")]
+        [SerializeField] private bool _generateHorizon = true;
+        [HideInInspector] [SerializeField] private Shader _horizonShader;
         [Tooltip("How far the horizon extension reaches beyond the far edge of the painted surface, in world units.")]
         [Min(0f)] [SerializeField] private float _horizonDistance = 60f;
         [Tooltip("Mesh segments across the water's width at the seam. Kept low on purpose: the mesh is meant to " +
@@ -95,7 +95,7 @@ namespace SpookyWater
         [Tooltip("Optional constant movement of the whole surface, as if wind were blowing over it. Off by " +
                  "default, so the water is a flat mirror until something disturbs it.")]
         [SerializeField] private WindSettings _wind = new();
-        [Tooltip("Multiplies the Ripple Scale of the water materials for every generated tile (set per tile, so the " +
+        [Tooltip("How far the interactive ripples move the generated water up and down (set per tile, so the " +
                  "material assets are untouched). Ripple height is an absolute world-unit value, so a small " +
                  "cell size needs this turned down or waves poke into neighbouring cells.")]
         [Min(0f)] [SerializeField] private float _displacementScale = 1f;
@@ -219,6 +219,7 @@ namespace SpookyWater
         {
             Water.CameraChanged -= OnWaterCameraChanged;
             Water.CameraChanged += OnWaterCameraChanged;
+            RefreshFromMaterials();
             if (Water.Register(this))
             {
                 _conflictLogged = false;
@@ -231,6 +232,7 @@ namespace SpookyWater
         private void OnDisable()
         {
             Water.CameraChanged -= OnWaterCameraChanged;
+            DestroyHorizonMaterial();
             Water.Unregister(this);
         }
 
@@ -254,6 +256,9 @@ namespace SpookyWater
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (!_horizonShader) _horizonShader = Shader.Find(HorizonShaderName);
+#endif
             if (_field) _field.VerboseLogging = _verboseFieldLogging;
             if (!Application.isPlaying)
                 WaterField.PublishWind(_wind, Vector4.zero, Water.TryGetWaterlineY(out var waterY) ? waterY : transform.position.y);
@@ -388,14 +393,14 @@ namespace SpookyWater
             }
 
             var lineBlock = new MaterialPropertyBlock();
-            lineBlock.SetFloat(RippleScaleId, _lineMeshMaterial.GetFloat(RippleScaleId) * _displacementScale);
+            lineBlock.SetFloat(RippleScaleId, _displacementScale);
             foreach (var (key, chunk) in lineChunks)
             {
                 CreateChunkObject($"WaterChunk_Line_{key.x}_{key.y}", chunk, _lineMeshMaterial, SpookyWaterSettings.Instance.FrontSortingLayerId,
                     WaterCellKind.Line, field, _generatedRoot, lineBlock, DisplacementBoundsPadding);
             }
             var bodyBlock = new MaterialPropertyBlock();
-            bodyBlock.SetFloat(RippleScaleId, _bodyMeshMaterial.GetFloat(RippleScaleId) * _displacementScale);
+            bodyBlock.SetFloat(RippleScaleId, _displacementScale);
             foreach (var (key, chunk) in bodyChunks)
             {
                 CreateChunkObject($"WaterChunk_Body_{key.x}_{key.y}", chunk, _bodyMeshMaterial, SpookyWaterSettings.Instance.FrontSortingLayerId,
@@ -412,7 +417,7 @@ namespace SpookyWater
             var paintedFarZ = generateSurface
                 ? (surfaceBounds.yMax - surfaceBounds.yMin) * (float)surfaceCellSize.y
                 : fieldDepth;
-            var farEdgeOpen = !generateSurface || (bool)_horizonMaterial;
+            var farEdgeOpen = !generateSurface || HorizonEnabled;
             var openEdgeWidth = Mathf.Max(_rippleGrid.openEdgeWidth, 1e-3f);
 
             field.SetWaterMask(worldXZ =>
@@ -462,7 +467,7 @@ namespace SpookyWater
                 }
 
                 var surfaceBlock = new MaterialPropertyBlock();
-                surfaceBlock.SetFloat(RippleScaleId, _surfaceMeshMaterial.GetFloat(RippleScaleId) * _displacementScale);
+                surfaceBlock.SetFloat(RippleScaleId, _displacementScale);
                 PublishSurfaceGlobals();
                 foreach (var (key, chunk) in surfaceChunks)
                 {
@@ -473,7 +478,7 @@ namespace SpookyWater
 
                 BuildSurfaceColliders(surfaceCellY, surfaceBounds, ColumnCenterX, cellSize.x, cellSizeZ, field);
 
-                if (_horizonMaterial)
+                if (HorizonEnabled)
                 {
                     BuildHorizonExtension(fieldOrigin, fieldWidth, paintedFarZ, averageSurfaceY);
                 }
