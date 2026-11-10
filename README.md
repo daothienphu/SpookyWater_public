@@ -186,7 +186,7 @@ When the water is generated the painted tiles are hidden and replaced by the gen
 
 Because Line is derived, **a hole in the Body paint becomes an underwater air pocket** with its own waterline.
 
-Beyond the far edge of the painted surface the builder adds a cheap fan-shaped **horizon** mesh so a perspective camera sees water to the distance (optional; leave the Horizon material empty to disable).
+Beyond the far edge of the painted surface the builder adds a cheap fan-shaped **horizon** mesh so a perspective camera sees water to the distance (optional; untick *Generate Horizon* on the builder to disable). It has no material of its own: the builder creates one at runtime and fills it from the Surface material.
 
 ### One level per scene
 
@@ -209,14 +209,13 @@ After **Generate Water** the builder has a child `GeneratedWater` with chunk mes
 ## Painting a level, step by step
 
 1. **Create the water**: **GameObject > SpookyWater > Water** (or add a `Grid` + `WaterTilemapBuilder` yourself and two child Tilemaps, then assign them in the builder's *Tilemaps* group and press **Assign Defaults** under *Materials*).
-2. **Create a palette**: **Assets > Create > SpookyWater > Tile Palette** (or the builder's **Create Tile Palette** button). Choose where to save it. It holds the two tiles: **Water Body** and **Water Surface** (assets in `Tiles/`).
-3. Open **Window > 2D > Tile Palette** and select the new palette.
-4. **Paint the cross-section**: select the **Front Tilemap** as the active tilemap (the builder has a **Select Front Tilemap** button) and paint **Water Body** on every water cell. The top cell of each column becomes the waterline. Columns with no paint are shores/land.
-5. **Paint the surface**: select the **Surface Tilemap** (**Select Surface Tilemap**) and paint **Water Surface**. For each column of front water, paint rows starting at the same bottom row index going up; the number of rows is how deep (in Z) the pond reaches. Leave a cell out to make a hole (for a rock or an island). Make some columns shallower than others for an irregular far shore.
-6. **Generate**: press **Generate Water**. Repeat painting and generating freely. Press **Clear** to see the tiles again.
-7. **Add scenery**: put your ground/bank sprites around the pond on sorting layers *before* `SpookyWater_Surface` (e.g. `Default`), so the front glass refracts what is behind it. See [Layers and sorting layers](#layers-and-sorting-layers).
-8. **Make scenery clip against the water** (optional but usually wanted for banks and props that stand in the water): give their sprites the `Materials/Sprites/SpriteLitDepthWrite.mat` material, or run **Tools > SpookyWater > Convert Material To Depth Clipping** on their material.
-9. **Play**.
+2. Open **Window > 2D > Tile Palette** and select **WaterTilePalette** in the palette dropdown (it ships in `Tiles/`). It holds the two tiles: **Water Body** and **Water Surface**. To make your own copy elsewhere, use **Assets > Create > SpookyWater > Tile Palette** (or the builder's **Create Tile Palette** button).
+3. **Paint the cross-section**: select the **Front Tilemap** as the active tilemap (the builder has a **Select Front Tilemap** button) and paint **Water Body** on every water cell. The top cell of each column becomes the waterline. Columns with no paint are shores/land.
+4. **Paint the surface**: select the **Surface Tilemap** (**Select Surface Tilemap**) and paint **Water Surface**. For each column of front water, paint rows starting at the same bottom row index going up; the number of rows is how deep (in Z) the pond reaches. Leave a cell out to make a hole (for a rock or an island). Make some columns shallower than others for an irregular far shore.
+5. **Generate**: press **Generate Water**. Repeat painting and generating freely. Press **Clear** to see the tiles again.
+6. **Add scenery**: put your ground/bank sprites around the pond on sorting layers *before* `SpookyWater_Surface` (e.g. `Default`), so the front glass refracts what is behind it. See [Layers and sorting layers](#layers-and-sorting-layers).
+7. **Make scenery clip against the water** (optional but usually wanted for banks and props that stand in the water): give their sprites the `Materials/Sprites/SpriteLitDepthWrite.mat` material, or run **Tools > SpookyWater > Convert Material To Depth Clipping** on their material.
+8. **Play**.
 
 Rules of thumb:
 
@@ -264,6 +263,8 @@ Every splash in or out also pushes a ripple whose strength grows with the body's
 Tune: builder > *Interaction* > **Contact Layers**, **Contact Ripple** (strength range, splash ripple and the four fractions); `WaterSplashEffects` > *Impacts*.
 
 To exclude something (e.g. projectiles that should pass silently), put it on a physics layer that is not in **Contact Layers**.
+
+**Per body:** `WaterSwimmer` and `WaterFloater` have a *Water Crossing* group, and any other body can get the same settings from **Add Component > SpookyWater > Water Crossing**. Turn on *Override Ripple* to give that body its own Contact Ripple settings (touch strength, splash ripple and the four fractions) instead of the water's, and use *Splash Scale* to make its splash particles bigger or smaller (0 = none).
 
 ### A swimming player character
 
@@ -403,12 +404,11 @@ Don'ts:
 
 ### Keeping sprites sharp behind the water
 
-The front glass bends whatever is behind it (Front material **Distortion**: *Distortion Strength* for the slow wobble, *Ripple Refraction* for the bulge under passing ripples). To keep a character crisp while it swims, open **Project Settings > SpookyWater** and untick its sorting layer (e.g. `Player`) in **Distorted Sorting Layers**. Sprites on unticked layers are still tinted, fogged and lit by the water, just not wobbled; the water around them keeps bending. Independently, *Surface Calm Depth* fades all bending out toward the waterline, so anything half in the water (a swimmer, a raft) doesn't look cut in two at the surface. With the Front material's Debug > *Show Distortion Mask* on, pink = kept sharp, teal = bent; plain dark blue means the mask is off because no layer is unticked.
+The front glass bends whatever is behind it (Front material **Distortion**: *Distortion Strength* for the slow wobble, *Ripple Refraction* for the bulge under passing ripples). To keep a character crisp while it swims, open **Project Settings > SpookyWater** and untick its sorting layer (e.g. `Player`) in **Distorted Sorting Layers**. Sprites on unticked layers are still tinted, fogged and lit by the water, just not wobbled; the water around them keeps bending. Independently, *Surface Calm Depth* fades all bending out toward the waterline, so anything half in the water (a swimmer, a raft) doesn't look cut in two at the surface.
 
 - Only layers before `SpookyWater_Surface` are listed (only they are seen through the glass). New layers start ticked.
 - It works by sorting layer, for every SpriteRenderer, TilemapRenderer and SpriteShape on it. A distorted sprite drawn in front of an unticked one is kept sharp where they overlap.
 - Cost: one extra half-resolution draw of the unticked layers per camera, only while at least one layer is unticked.
-- To check it, tick **Debug > Show Distortion Mask** on the Front material (pink = kept sharp).
 
 ### Light shafts
 
@@ -556,9 +556,9 @@ Leave the Surface Tilemap empty (or unassigned). You get the front glass, the wa
 
 ### Per-scene water looks
 
-The shared materials in `Materials/` are used by every scene. For a scene with its own look, duplicate `WaterSurface.mat`, `WaterFront.mat` and `WaterHorizon.mat` next to your scene, edit the copies and assign them on the builder (*Materials* group). Required when the package is installed from Git (read-only).
+The shared materials in `Materials/` are used by every scene. For a scene with its own look, duplicate `WaterSurface.mat` and `WaterFront.mat` next to your scene, edit the copies and assign them on the builder (*Materials* group). Required when the package is installed from Git (read-only).
 
-Keep the **Ripple Height** of the Surface material equal to the **Ripple Scale** of the Front material so the edges meet. Horizon reflection, fog and underwater values are copied from the Surface material on every Generate.
+Wave height comes from the builder's **Displacement Scale**, which drives the Surface, Front and Horizon together so the edges always meet. The Horizon has no settings of its own: its colors, haze, fog, reflection and underwater values all come from the Surface material (the horizon starts from the Surface *Far Color*; the rest is in the Surface **Horizon** section), and edits in the Surface inspector apply to the horizon immediately.
 
 ## Component reference
 
@@ -582,10 +582,9 @@ Every component appears under **Add Component > SpookyWater/**. Every field has 
 | Surface Mesh Material | `SpookyWater/Water Surface` | Required if a Surface tilemap is used. |
 | Line Mesh Material | `SpookyWater/Water Front` | The waterline strip. |
 | Body Mesh Material | `SpookyWater/Water Front` | The submerged glass; can be the same material as Line. |
-| Horizon Material | `SpookyWater/Water Horizon` | Optional; empty = no horizon mesh. |
 | Ripple Simulation Material | `Hidden/SpookyWater/Ripple Simulation` | Required. |
 
-**Horizon**: *Horizon Distance* (60; 12 from the create menu) how far past the painted surface it reaches; *Horizon X/Z Segments*; *Horizon Spread* (1 = fans out with the camera's view angle so its sides stay off-screen); *Horizon Seam Blend* (world units over which the surface blends into the horizon).
+**Horizon**: *Generate Horizon* (on; builds the far water, coloured from the Surface material), *Horizon Distance* (60; 12 from the create menu) how far past the painted surface it reaches; *Horizon X/Z Segments*; *Horizon Spread* (1 = fans out with the camera's view angle so its sides stay off-screen); *Horizon Seam Blend* (world units over which the surface blends into the horizon).
 
 **Ripples**
 
@@ -611,7 +610,7 @@ Every component appears under **Add Component > SpookyWater/**. Every field has 
 
 *Ambient Ripples* (random small ripples so still water doesn't look like glass; simulated and spread freely): *Enabled* (on), *Interval* (0.4-1.8 s), *Count* per event (1-2), *Cluster Spread* (0.35), *Radius* (0.08-0.14), *Strength* (0.4-1.2), *Down Chance* (0.5).
 
-*Wind* (off by default; constant, gentle movement of the whole surface as if wind were blowing on it - long low wave bands that drift with the wind and break the reflection into wavering streaks; drawn analytically by the shaders on top of the simulation, so it costs no simulation time and splashes still work; all live-tunable): *Enabled* (off), *Strength* (0.5, scales height from 0 to Wave Height), *Direction* (270 = toward the camera, 90 = away, 0 = right), *Wave Height* (0.08, simulation units x material Ripple Height), *Wavelength* (1.2 world units; two smaller sets ride on top), *Crest Length* (3, how stretched the crests are across the wind), *Speed* (0.6), *Gustiness* (0.5, calm mirror patches between gusts), *Gust Size* (8), *Gust Speed* (1.5). Wind also moves the waterline, the horizon water's reflection and floating debris (visually; `WaterFloater` and debris drift do not feel it).
+*Wind* (off by default; constant, gentle movement of the whole surface as if wind were blowing on it - long low wave bands that drift with the wind and break the reflection into wavering streaks; drawn analytically by the shaders on top of the simulation, so it costs no simulation time and splashes still work; all live-tunable): *Enabled* (off), *Strength* (0.5, scales height from 0 to Wave Height), *Direction* (270 = toward the camera, 90 = away, 0 = right), *Wave Height* (0.08, simulation units x Displacement Scale), *Wavelength* (1.2 world units; two smaller sets ride on top), *Crest Length* (3, how stretched the crests are across the wind), *Speed* (0.6), *Gustiness* (0.5, calm mirror patches between gusts), *Gust Size* (8), *Gust Speed* (1.5). Wind also moves the waterline, the horizon water's reflection and floating debris (visually; `WaterFloater` and debris drift do not feel it).
 
 *Front Ripples* (tiny analytic ripples just behind the front edge, never spread across the lake; max 16 at once): *Enabled*, *Interval* (0.08-0.3 s), *Max Distance* from the front (1.2), *Max Radius* (0.5), *Lifetime* (0.7 s), *Speed* (0.8), *Wavelength* (0.07), *Strength* (0.15-0.35).
 
@@ -724,7 +723,7 @@ Max 32 active obstacles.
 | Curve Steps | 16 | Segments per bezier span. |
 | Depth | 1.5 | How far the surface strip reaches back (world Z). |
 | Surface Material | builder's | WaterSurface material for the strip. No planar reflection: it mirrors its Reflection Sky Color. |
-| Displacement Scale | 1 | Multiplies both materials' Ripple Height (smaller waves than the lake). |
+| Displacement Scale | 1 | How far ripples move the pocket's water (below 1 = smaller waves than the lake). |
 | Surface Segments | (16, 12) | Strip mesh: X per unit, Z over the depth. |
 | Surface Expand | 1.5 | How far the strip widens on each side by its back edge, in world units (like the horizon fan). Raise it until the strip's sides stay hidden behind the front water around the pocket; 0 is a plain strip. |
 | Clipped Sprites | empty | Sprite Renderers clipped by the outline (the pocket's back wall, rocks, plants). The pocket adds a Sprite Mask shaped exactly like the outline and sets their Mask Interaction, restoring it when the pocket is disabled or a sprite leaves the list. |
@@ -966,9 +965,9 @@ Materials live in `Materials/`. Duplicate before tweaking when several scenes sh
 
 | Shader | Used by | Sections |
 |---|---|---|
-| `SpookyWater/Water Surface` (`WaterSurface.mat`) | Surface tiles | **Surface** (ripple height, distance and edge falloff, normal strength), **Color** (shallow-to-deep gradient, rim), **Glow** (self-lit HDR glow, ripple boost, underside), **Depth Fog** (fade to a fog colour by world Z; match your fog layers), **Reflection** (blur, distortion, tint, sky colour, Fresnel), **Contact Wavelets** (lapping strokes at object bases that smear the reflection), **Ripple Highlight**, **Surface Shimmer**, **Underside** (what the surface looks like from underwater), **Detail**, **Debug** (ripple heat map, click marker). |
-| `SpookyWater/Water Front` (`WaterFront.mat`) | Line and Body tiles | **Surface** (Ripple Scale; keep equal to the Surface material's Ripple Height), **Color**, **Clarity** (how much shows through, fade with depth), **Glow** (self-lit HDR glow, strongest under the surface), **Mist** (lit haze behind the glass), **Waterline** (foam line, glow), **Distortion** (wobble, ripple refraction, calm band under the waterline; sharp layers via the settings asset), **Detail**, **Debug**. |
-| `SpookyWater/Water Horizon` (`WaterHorizon.mat`) | Far fan | **Surface**, **Horizon** (near colour, horizon colour, haze distance, underwater fade, underwater haze colour), **Detail**. Reflection/fog/glow/underwater values are copied from the Surface material on Generate. |
+| `SpookyWater/Water Surface` (`WaterSurface.mat`) | Surface tiles | **Surface** (distance and edge falloff, normal strength), **Color** (near-to-far gradient), **Glow** (self-lit HDR glow, ripple boost, underside), **Depth Fog** (fade to a fog colour by world Z; match your fog layers), **Reflection** (blur, distortion, tint, sky colour, Fresnel), **Contact Wavelets** (lapping strokes at object bases that smear the reflection), **Ripple Highlight**, **Horizon** (far water past the painted surface: horizon colour, haze, underwater fade), **Underside** (what the surface looks like from underwater). |
+| `SpookyWater/Water Front` (`WaterFront.mat`) | Line and Body tiles | **Surface** (edge and vertical falloff), **Color**, **Clarity** (how much shows through, fade with depth), **Glow** (self-lit HDR glow, strongest under the surface), **Mist** (lit haze behind the glass), **Waterline** (foam line, glow), **Distortion** (wobble, ripple refraction, calm band under the waterline; sharp layers via the settings asset). |
+| `SpookyWater/Water Horizon` (no material asset) | Far fan | No material to edit: the builder creates it at runtime and everything comes from the Surface material (its *Far Color* and **Horizon** section). |
 | `SpookyWater/Surface Debris` (`SurfaceDebris.mat`) | Debris | **Debris** (tint, alpha cut-out, tilt shading, wet edge, fog). |
 | `SpookyWater/Water Particle` (`Materials/Particles/`) | Splash particles | **Shape** (droplet, bubble, ring, crown, puff), **Color**, **Blending**. |
 | `SpookyWater/Light Shaft` (`LightShaft.mat`, `LightShaft_Underwater.mat`) | Light shafts | **Blending**, **Bands** (default images for layers A and B); the rest is per shaft. |
@@ -979,11 +978,11 @@ Materials live in `Materials/`. Duplicate before tweaking when several scenes sh
 
 Common looks:
 
-- **Calmer water:** lower *Displacement Scale* on the builder or *Ripple Height* on the Surface material (and Front *Ripple Scale* to match); raise *Damping*.
+- **Calmer water:** lower *Displacement Scale* on the builder; raise *Damping*.
 - **Heavier, slower waves:** raise *Impact Radius*, lower *Speed*, lower *Damping*.
 - **Clearer water:** Front material *Clarity*; Surface *Color* alpha.
-- **Murkier water:** Front *Mist*, Surface *Underside* murk, Horizon *underwater fade*.
-- **Far water seen from below doesn't match hazy background art:** set Horizon *Underwater Haze Color* to the haze painted on the far art (alpha 1), so the underside fades to it instead of the dark Outside-Window colour.
+- **Murkier water:** Front *Mist*, Surface *Underside* murk, Surface *Horizon* underwater fade.
+- **Far water seen from below doesn't match hazy background art:** set the Surface material's Horizon *Underwater Haze Color* to the haze painted on the far art (alpha 1), so the underside fades to it instead of the dark Outside-Window colour.
 - **Glowing water (water as the light source in a dark scene):** raise *Glow Intensity* on both the Surface and Front materials, pick a *Glow Color*, and raise *Self Illumination* so 2D lights no longer darken it. On the Front, *Glow Depth* sets how far the bright band under the surface reaches and *Deep Glow* how much the whole body glows. The soft halo around the water comes from URP Bloom: add a Volume with Bloom (threshold about 1, intensity 0.5-1) and push the HDR glow above 1.
 - **Beaches that absorb ripples:** *Shore Reflectivity* < 1.
 
@@ -1068,15 +1067,14 @@ Mobile: start with Texels Per Unit 16, Max Resolution 512, Reflection Resolution
 | Bubbles or splashes hidden under the water | Their sorting layers/orders changed; restore the defaults in the settings asset. |
 | Characters don't ripple the water | Needs `Rigidbody2D` + `Collider2D` on a layer in **Contact Layers**, crossing the top edge of Line cells. |
 | Mouse clicks do nothing | Add Mouse Ripples; the Surface tilemap must exist (it provides the colliders); nothing else should block the ray. Turn on *Debug Log*. |
-| Water edges don't meet at the front | Surface *Ripple Height* and Front *Ripple Scale* differ. Keep them equal. |
 | A sprite pokes through the surface oddly | Give it `SpriteLitDepthWrite.mat` (or use the converter) so it clips. |
 | "Two builders" warning | Only one level per scene. Paint more ponds on the same tilemaps. |
 | A hard fog line across the reflection | `WaterReflectable` on a fog sprite. Remove it. |
-| Horizon material changes have no effect | Reflection, fog and underwater values are copied from the Surface material on Generate. Edit those there. |
+| Horizon colors or haze don't change | They come from the Surface material (*Far Color* and the **Horizon** section). |
 | Can't edit materials / sample scene not created | Package installed from Git is read-only. Duplicate materials into `Assets/`; use the `.unitypackage` for the sample. |
 | Floater sinks or flies off | Rigidbody2D must be Dynamic with sensible mass; check *Float Depth* and that the floater sits over Line cells. |
 
-Verbose ripple logging: builder > *Debug*. Visual debugging: Water Surface / Water Front materials > *Debug* (ripple heat map, click marker).
+Verbose ripple logging: builder > *Debug*.
 
 ## FAQ
 
